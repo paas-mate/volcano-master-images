@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 permissions: write-all
 
@@ -25,5 +26,41 @@ jobs:
         run: git clone --depth 1 https://github.com/volcano-sh/volcano.git
       - name: make images
         run: cd volcano; make images
-      - name: list images
-        run: docker images
+      - name: show tag
+        run: cd volcano; git rev-parse HEAD
+      - name: webhook manager
+        run: cd volcano; docker save volcanosh/vc-webhook-manager:$(git rev-parse HEAD) -o ../webhook-manager.tar.gz
+      - name: scheduler
+        run: cd volcano; docker save volcanosh/vc-scheduler:$(git rev-parse HEAD) -o ../scheduler.tar.gz
+      - name: controller manager
+        run: cd volcano; docker save volcanosh/vc-controller-manager:$(git rev-parse HEAD) -o ../controller-manager.tar.gz
+      - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tag release
+        uses: tvdias/github-tagger@v0.0.2
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          tag: latest
+
+      # Creates the new release with the binary as a release asset.
+      # If the previous Action was skipped, then this keeps the same tag as the
+      # previous release.
+      - name: Create new release
+        uses: softprops/action-gh-release@v1
+        with:
+          body: latest
+          name: latest
+          tag_name: latest
+          files: |
+            controller-manager.tar.gz
+            scheduler.tar.gz
+            webhook-manager.tar.gz
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
