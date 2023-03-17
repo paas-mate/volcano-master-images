@@ -34,7 +34,7 @@ jobs:
         run: cd volcano; docker save volcanosh/vc-scheduler:$(git rev-parse HEAD) -o ../scheduler.tar.gz
       - name: controller manager
         run: cd volcano; docker save volcanosh/vc-controller-manager:$(git rev-parse HEAD) -o ../controller-manager.tar.gz
-      - uses: dev-drprasad/delete-tag-and-release@v0.2.0
+      - uses: dev-drprasad/delete-tag-and-release@v0.2.1
         with:
           delete_release: true
           tag_name: latest
